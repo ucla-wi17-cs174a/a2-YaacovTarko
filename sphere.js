@@ -1,18 +1,7 @@
 //Generates spheres for WebGL to draw
 
-//a, b, and c are points 
-function perFragmentNormals(a, b, c, normalArray){
-	var edge1=subtract(b,a);
-	var edge2=subtract (c,a);	
-	var normal=normalize(cross(edge1, edge2));
-	for(var i=0; i<3; i++){
-		//for each vertex, push the normals of the associated fragments 
-		normalArray.push(normal); 
-	}
-
-}
-
-function drawSphere(num_vertices, flat_shading, radius, arrays) {
+//this function is adapted from tutorial 11 on learningwebgl.com
+function drawSphere(num_vertices, radius, arrays) {
 	//this function is adapted from tutorial #11 on learningWebGL.com
 
 	var latitudeBands = Math.ceil(Math.sqrt(num_vertices));
@@ -36,26 +25,18 @@ function drawSphere(num_vertices, flat_shading, radius, arrays) {
 			var v = 1 - (latNumber / latitudeBands);
 
 			//push vertex position data 
-			arrays[0].push(radius * x);
-			arrays[0].push(radius * y);
-			arrays[0].push(radius * z);
-
-			if (flat_shading) {
-				//per-primitive normals will be calculated when primitives are generated, when triangles are indexed
-			} else {
-				//push per-vertex normals
-				arrays[1].push(x);
-				arrays[1].push(y);
-				arrays[1].push(z);
-			}
+			arrays[0].push(vec3(radius*x, radius*y, radius*z));
+			
+			//push per-vertex normals
+			arrays[1].push(vec3(x, y, z));
+			
 			//push texture coords 
-			arrays[2].push(u);
-			arrays[2].push(v);
+			arrays[2].push(vec2(u, v));
+			
 		}
 	}
 
 	//now that we've generated all the data for each vertex along the lat and long lines, we can iterate across the lines to index each triangle
-	//if you're flat shading, you're gonna need to calculate per-triangle normals here as well
 	for (var latNumber = 0; latNumber < latitudeBands; latNumber++) {
 		for (var longNumber = 0; longNumber < longitudeBands; longNumber++) {
 			//for each iteration, we'll generate 2 triangles by pushing their vertices into the indices array
@@ -69,14 +50,6 @@ function drawSphere(num_vertices, flat_shading, radius, arrays) {
 			arrays[3].push(second + 1);
 			arrays[3].push(first + 1);
 
-			if(flat_shading){
-				//we'll compute the per-primative normals for the two triangles and push them into the normals array
-				var vertex1=vec3(arrays[0][3*first], arrays[0][3*first+1], arrays[0][3*first+2]);
-				var vertex2=vec3(arrays[0][3*second],arrays[0][3*second+1],arrays[0][3*second+2]);
-				var vertex3=vec3(arrays[0][3*first+3], arrays[0][3*first+4], arrays[0][3*first+5]); 
-				perFragmentNormals(vertex1, vertex2, vertex3, arrays[1]);
-
-			}
 		}
 	}
 
@@ -92,11 +65,10 @@ function drawSphere(num_vertices, flat_shading, radius, arrays) {
 Declare_Any_Class("Sphere", {
 	//num_vertices is self explanatory.
 	//shading_type determines whether flat, Gourard or Phong shading will be used. 0=flat, 1=Gourard, 2=Phong 
-	populate: function(num_vertices, shading_type, radius) {
+	populate: function(num_vertices, radius) {
 
 		var arrays = [this.positions, this.normals, this.texture_coords, this.indices];
 
-		drawSphere(num_vertices, !shading_type, radius, arrays);
-		//drawSphere(va, vb, vc, vd, num_vertices, !shading_type, arrays);
+		drawSphere(num_vertices, radius, arrays);
 	}
 }, Shape)

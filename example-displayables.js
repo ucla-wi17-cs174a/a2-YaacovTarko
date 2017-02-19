@@ -4,6 +4,8 @@
 
 // Now go down to Example_Animation's display() function to see where the sample shapes you see drawn are coded, and a good place to begin filling in your own code.
 
+var control_sensitivity=1; 
+
 Declare_Any_Class( "Debug_Screen",  // Debug_Screen - An example of a displayable object that our class Canvas_Manager can manage.  Displays a text user interface.
   { 'construct': function( context )
       { this.define_data_members( { string_map: context.shared_scratchpad.string_map, start_index: 0, tick: 0, visible: false, graphicsState: new Graphics_State() } );
@@ -51,7 +53,7 @@ Declare_Any_Class( "Debug_Screen",  // Debug_Screen - An example of a displayabl
 Declare_Any_Class( "Example_Camera",     // An example of a displayable object that our class Canvas_Manager can manage.  Adds both first-person and
   { 'construct': function( context )     // third-person style camera matrix controls to the canvas.
       { // 1st parameter below is our starting camera matrix.  2nd is the projection:  The matrix that determines how depth is treated.  It projects 3D points onto a plane.
-        context.shared_scratchpad.graphics_state = new Graphics_State( translation(0, 0,-25), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
+        context.shared_scratchpad.graphics_state = new Graphics_State( translation(0, 0,-45), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
         this.define_data_members( { graphics_state: context.shared_scratchpad.graphics_state, thrust: vec3(), origin: vec3( 0, 5, 0 ), looking: false } );
 
         // *** Mouse controls: ***
@@ -63,17 +65,26 @@ Declare_Any_Class( "Example_Camera",     // An example of a displayable object t
         canvas.addEventListener( "mouseout",  ( function(self) { return function(e) { self.mouse.from_center = vec2(); }; } ) (this), false );    // Stop steering if the mouse leaves the canvas.
       },
     'init_keys': function( controls )   // init_keys():  Define any extra keyboard shortcuts here
-      { controls.add( "Space", this, function() { this.thrust[1] = -1; } );     controls.add( "Space", this, function() { this.thrust[1] =  0; }, {'type':'keyup'} );
-        controls.add( "z",     this, function() { this.thrust[1] =  1; } );     controls.add( "z",     this, function() { this.thrust[1] =  0; }, {'type':'keyup'} );
-        controls.add( "w",     this, function() { this.thrust[2] =  1; } );     controls.add( "w",     this, function() { this.thrust[2] =  0; }, {'type':'keyup'} );
-        controls.add( "a",     this, function() { this.thrust[0] =  1; } );     controls.add( "a",     this, function() { this.thrust[0] =  0; }, {'type':'keyup'} );
-        controls.add( "s",     this, function() { this.thrust[2] = -1; } );     controls.add( "s",     this, function() { this.thrust[2] =  0; }, {'type':'keyup'} );
-        controls.add( "d",     this, function() { this.thrust[0] = -1; } );     controls.add( "d",     this, function() { this.thrust[0] =  0; }, {'type':'keyup'} );
-        controls.add( "f",     this, function() { this.looking  ^=  1; } );
-        controls.add( ",",     this, function() { this.graphics_state.camera_transform = mult( rotation( 6, 0, 0,  1 ), this.graphics_state.camera_transform ); } );
-        controls.add( ".",     this, function() { this.graphics_state.camera_transform = mult( rotation( 6, 0, 0, -1 ), this.graphics_state.camera_transform ); } );
+      { controls.add( "Space", this, function() { this.thrust[2] =  1; } );     controls.add( "Space",     this, function() { this.thrust[2] =  0; }, {'type':'keyup'} );
+        
+        controls.add( "1",     this, function() { control_sensitivity=1});
+        controls.add( "2",     this, function() { control_sensitivity=2});
+        controls.add( "3",     this, function() { control_sensitivity=3});
+        controls.add( "4",     this, function() { control_sensitivity=4});
+        controls.add( "5",     this, function() { control_sensitivity=5});
+        controls.add( "6",     this, function() { control_sensitivity=6});
+        controls.add( "7",     this, function() { control_sensitivity=7});
+        controls.add( "8",     this, function() { control_sensitivity=8});
+        controls.add( "9",     this, function() { control_sensitivity=9});
+
+
+        controls.add( "Right", this, function() { this.graphics_state.camera_transform = mult( rotation( control_sensitivity, 0, 1,  0 ), this.graphics_state.camera_transform ); } );
+        controls.add( "Left",  this, function() { this.graphics_state.camera_transform = mult( rotation( control_sensitivity, 0, -1, 0 ), this.graphics_state.camera_transform ); } );
+        controls.add( "Up",    this, function() { this.graphics_state.camera_transform = mult( rotation( control_sensitivity, -1, 0, 0 ), this.graphics_state.camera_transform ); } );
+        controls.add( "Down",  this, function() { this.graphics_state.camera_transform = mult( rotation( control_sensitivity,  1, 0, 0 ), this.graphics_state.camera_transform ); } );
+        
         controls.add( "o",     this, function() { this.origin = mult_vec( inverse( this.graphics_state.camera_transform ), vec4(0,0,0,1) ).slice(0,3)         ; } );
-        controls.add( "r",     this, function() { this.graphics_state.camera_transform = mat4()                                                               ; } );
+        controls.add( "r",     this, function() { this.graphics_state.camera_transform = translation(0, 0, -45);   control_sensitivity=1;                     ; } );
       },
     'update_strings': function( user_interface_string_manager )       // Strings that this displayable object (Animation) contributes to the UI:
       { var C_inv = inverse( this.graphics_state.camera_transform ), pos = mult_vec( C_inv, vec4( 0, 0, 0, 1 ) ),
@@ -113,18 +124,15 @@ Declare_Any_Class( "Example_Animation",  // An example of a displayable object t
       { this.shared_scratchpad    = context.shared_scratchpad;
       
         //Sphere constructor arguments: first is num_vertices, second is shading type, third is radius
-        shapes_in_use.sun            = new Sphere(200, 1, 1.5); 
-        shapes_in_use.planet1 = new Sphere(16, 0, 0.3); 
-        shapes_in_use.planet2 = new Sphere(50, 1, 0.6);
-        shapes_in_use.planet3 = new Sphere(200, 2, 0.5); 
-        shapes_in_use.planet4 = new Sphere(36, 2, 0.4); 
+        shapes_in_use.sun            = new Sphere(200, 1.5); 
+        shapes_in_use.planet1 = Sphere.prototype.auto_flat_shaded_version(17, 0.6);   
+        shapes_in_use.planet2 = new Sphere(50, 0.8);
+        shapes_in_use.planet3 = new Sphere(200, 0.7); 
+        shapes_in_use.planet4 = new Sphere(100, 0.5); 
+        shapes_in_use.moon    = new Sphere(100, 0.3);
 
-        //shapes_in_use.triangle_flat        = Triangle.prototype.auto_flat_shaded_version();
-        //shapes_in_use.strip_flat           = Square.prototype.auto_flat_shaded_version();
-        //shapes_in_use.bad_tetrahedron_flat = Tetrahedron.prototype.auto_flat_shaded_version( false );
-        //shapes_in_use.tetrahedron_flat          = Tetrahedron.prototype.auto_flat_shaded_version( true );
-        //shapes_in_use.windmill_flat             = Windmill.prototype.auto_flat_shaded_version( 10 );
-          
+        //animate by default, so you don't have to press a key to start
+        this.shared_scratchpad.animate ^= 1;
       },
     'init_keys': function( controls )   // init_keys():  Define any extra keyboard shortcuts here
       {
@@ -147,22 +155,23 @@ Declare_Any_Class( "Example_Animation",  // An example of a displayable object t
         // If you want more than two lights, you're going to need to increase a number in the vertex shader file (index.html).  For some reason this won't work in Firefox.
         graphics_state.lights = [];                    // First clear the light list each frame so we can replace & update lights.
 
-        var blueSunColor = Color(0, 0.8,0.98, 1);
+        var blueSunColor = Color(0.1, 0.8,0.98, 1);
 
         var t = graphics_state.animation_time/1000, light_orbit = [ Math.cos(t), Math.sin(t) ];
 
         //I'm gonna have to fix the location of this light, and make sure it's actually working
-        graphics_state.lights.push( new Light( vec3( 0 , 5, 0), blueSunColor, 1 ) );
+        graphics_state.lights.push( new Light( vec4( 0, 2, 0, 1 ), blueSunColor, 50) );
+        //graphics_state.lights.push( new Light( vec4(  30*light_orbit[0],  30*light_orbit[1],  34*light_orbit[0], 1 ), Color( 0, .4, 0, 1 ), 100000 ) );
+
 
         // *** Materials: *** Declare new ones as temps when needed; they're just cheap wrappers for some numbers.
         // 1st parameter:  Color (4 floats in RGBA format), 2nd: Ambient light, 3rd: Diffuse reflectivity, 4th: Specular reflectivity, 5th: Smoothness exponent, 6th: Texture image.
-        var purplePlastic     = new Material( Color( .9,.5,.9,1 ), .4, .4, .8, 40 ), // Omit the final (string) parameter if you want no texture
-              greyPlastic     = new Material( Color( .5,.5,.5,1 ), .4, .8, .4, 20 ),
-              blueSun         = new Material( blueSunColor,        .9,  0,  0, 0),
-              greyPlanet      = new Material( Color( .85,.85,.9,1 ), .6, .8, .8, 5 ),
-              blueGreenPlanet = new Material( Color(0.07,0.34,0.27), .5, .75, .6, 40),
-              calmBluePlanet  = new Material( Color(0.3, 0.6, 1) , .7, .3, .6, 30),
-              orangePlanet    = new Material( Color(0.51, 0.31, 0.09), .7, .3, .3, 30), 
+        var   blueSun         = new Material( blueSunColor,            .9, 0, 0, 100),
+              greyPlanet      = new Material( Color( .85,.85,.9,1 ),   .4, .1, .2, 50 ),
+              blueGreenPlanet = new Material( Color(0.07,0.34,0.27),   .5, .6, 1, 10),
+              calmBluePlanet  = new Material( Color(0.3, 0.6, 1) ,     .7, 1, 2,  10),
+              orangePlanet    = new Material( Color(0.51, 0.31, .2), .6, .6, 1,  10), 
+              moon            = new Material( Color(0.88, 0.37, 0.14), .5, 1, 1.5,  10),
               placeHolder     = new Material( Color(0,0,0,0), 0,0,0,0, "Blank" );
 
         /**********************************
@@ -170,53 +179,41 @@ Declare_Any_Class( "Example_Animation",  // An example of a displayable object t
         **********************************/                                  // From here on down it's just some example shapes drawn for you -- replace them with your own!
 
 
+        this.shared_scratchpad.graphics_state.gouraud =true;  //planet 1 should be flat shaded (in the fragment shader)
 
-        var sun_transform = mult( model_transform, translation (0, 5, 0));
+        var sun_transform = mult( model_transform, translation (0, 2, 0));
         shapes_in_use.sun         .draw( graphics_state, sun_transform, blueSun ); 
 
-        var planet1_transform = mult (sun_transform, rotation(90, vec3(0, 0, 1)));
-        planet1_transform = mult (planet1_transform, translation(-4, 0, 0));
+
+        var planet1_transform = mult (sun_transform, rotation(107*t, vec3(0, 0, 1)));
+        planet1_transform = mult (planet1_transform, translation(-5, 0, 0));
         shapes_in_use.planet1.draw(graphics_state, planet1_transform, greyPlanet);
 
-        var planet2_transform = mult(sun_transform, rotation(90, vec3(0, 0, 1)));
-        planet2_transform = mult (planet2_transform, translation(-7, 0, 0));
+        this.shared_scratchpad.graphics_state.gouraud =true; //planet 2 is supposed to be Gouraud shaded
+
+        var planet2_transform = mult(sun_transform, rotation(74*t, vec3(0, 0, 1)));
+        planet2_transform = mult (planet2_transform, translation(-8, 0, 0));
         shapes_in_use.planet2.draw(graphics_state, planet2_transform, blueGreenPlanet); 
 
-        var planet3_transform = mult(sun_transform, rotation(90, vec3(0, 0, 1)));
-        planet3_transform = mult (planet3_transform, translation(-10, 0, 0));
+        this.shared_scratchpad.graphics_state.gouraud =false;  //Planets 3 and 4 and the moon will be phong shaded
+
+        var planet3_transform = mult(sun_transform, rotation(53*t, vec3(0, 0, 1)));
+        planet3_transform = mult (planet3_transform, translation(-11, 0, 0));
         shapes_in_use.planet3.draw(graphics_state, planet3_transform, calmBluePlanet); 
 
-        var planet4_transform = mult(sun_transform, rotation(90, vec3(0, 0, 1)));
-        planet4_transform = mult (planet4_transform, translation(-14, 0, 0));
+        var planet4_transform = mult(sun_transform, rotation(45*t, vec3(0, 0, 1)));
+        planet4_transform = mult (planet4_transform, translation(-15, 0, 0));
         shapes_in_use.planet4.draw(graphics_state, planet4_transform, orangePlanet); 
+
+        var moon_transform = mult(planet4_transform, rotation(110*t, vec3(0, 0, 1)));
+        moon_transform = mult(moon_transform, translation(-2, 0, 0));
+        shapes_in_use.moon.draw(graphics_state, moon_transform, moon); 
 
         /*
 
-
+        
         model_transform = mult( model_transform, translation( 0, 5, 0 ) );
         shapes_in_use.triangle       .draw( graphics_state, model_transform, purplePlastic );
         */
-  
-        /*
-        model_transform = mult( model_transform, translation( 0, -2, 0 ) );
-        shapes_in_use.strip          .draw( graphics_state, model_transform, greyPlastic );
-      
-
-        model_transform = mult( model_transform, translation( 0, -2, 0 ) );
-        shapes_in_use.tetrahedron    .draw( graphics_state, model_transform, purplePlastic );
-
-
-        model_transform = mult( model_transform, translation( 0, -2, 0 ) );
-        shapes_in_use.bad_tetrahedron.draw( graphics_state, model_transform, greyPlastic );
-
-
-        model_transform = mult( model_transform, translation( 0, -2, 0 ) );
-        shapes_in_use.windmill       .draw( graphics_state, mult( model_transform, rotation( .7*graphics_state.animation_time, .1, .8, .1 ) ), purplePlastic );        
-        
-        
-        shaders_in_use[ "Default" ].activate();
-        model_transform = mult( model_transform, translation( 0, -2, 0 ) );
-        shapes_in_use.windmill       .draw( graphics_state, model_transform, placeHolder );
-        */
-      }
+       }
   }, Animation );

@@ -97,8 +97,10 @@ Declare_Any_Class( "Phong_or_Gouraud_Shader",
               for(int i = 0; i < N_LIGHTS; i++)
               {
                 float attenuation_multiplier = 1.0 / (1.0 + attenuation_factor[i] * (dist[i] * dist[i]));
-                float diffuse  = 0.0;                                                                                 // TODO
-                float specular = 0.0;                                                                                 // TODO
+
+                //here's my code: 
+                float diffuse = max(dot(L[i], N), 0.0);
+                float specular= pow(pow(max(dot(N, H[i]), 0.0), shininess), smoothness);
 
                 VERTEX_COLOR.xyz += attenuation_multiplier * ( shapeColor.xyz * diffusivity * diffuse + lightColor[i].xyz * shininess * specular );
               }
@@ -141,10 +143,10 @@ Declare_Any_Class( "Phong_or_Gouraud_Shader",
             vec4 tex_color = texture2D( texture, fTexCoord );
             gl_FragColor = tex_color * ( USE_TEXTURE ? ambient : 0.0 ) + vec4( shapeColor.xyz * ambient, USE_TEXTURE ? shapeColor.w * tex_color.w : shapeColor.w ) ;
             for( int i = 0; i < N_LIGHTS; i++ )
-            {
+            { 
               float attenuation_multiplier = 1.0 / (1.0 + attenuation_factor[i] * (dist[i] * dist[i]));
-              float diffuse  = 0.0;                                                                                 // TODO
-              float specular = 0.0;                                                                                 // TODO
+              float diffuse  = max(dot(L[i], N), 0.0);                                 // TODO
+              float specular = pow(pow(max(dot(N, H[i]), 0.0), shininess), smoothness);                                                 // TODO
 
               gl_FragColor.xyz += attenuation_multiplier * (shapeColor.xyz * diffusivity * diffuse  + lightColor[i].xyz * shininess * specular );
             }
@@ -152,29 +154,3 @@ Declare_Any_Class( "Phong_or_Gouraud_Shader",
           }`;
       }
   }, Shader );
-
-Declare_Any_Class( "Funny_Shader",                    // This one borrows almost everything from Phong_or_Gouraud_Shader.
-  { 'fragment_glsl_code_string': function()           // ********* FRAGMENT SHADER *********
-      { return `
-          // An alternate fragment shader to the above that's a procedural function of time.
-          precision mediump float;
-
-          uniform float animation_time;
-          uniform bool USE_TEXTURE;
-          varying vec2 fTexCoord;   // per-fragment interpolated values from the vertex shader
-
-          void main()
-          {
-            if( !USE_TEXTURE ) return;    // USE_TEXTURE must be enabled for any shape using this shader; otherwise texture_coords lookup will fail.
-
-            float a = animation_time, u = fTexCoord.x, v = fTexCoord.y;
-
-            gl_FragColor = vec4(
-              2.0 * u * sin(17.0 * u ) + 3.0 * v * sin(11.0 * v ) + 1.0 * sin(13.0 * a),
-              3.0 * u * sin(18.0 * u ) + 4.0 * v * sin(12.0 * v ) + 2.0 * sin(14.0 * a),
-              4.0 * u * sin(19.0 * u ) + 5.0 * v * sin(13.0 * v ) + 3.0 * sin(15.0 * a),
-              5.0 * u * sin(20.0 * u ) + 6.0 * v * sin(14.0 * v ) + 4.0 * sin(16.0 * a));
-            gl_FragColor.a = gl_FragColor.w;
-          }`;
-      }
-  }, Phong_or_Gouraud_Shader );

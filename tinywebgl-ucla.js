@@ -111,6 +111,33 @@ Declare_Any_Class( "Shape",
           this.normals[ indices[0] ] = this.normals[ indices[1] ] = this.normals[ indices[2] ] = vec3( n1[0], n1[1], n1[2] );   // Propagate the normal to the 3 vertices.
         }
       }
+/* alternative version of flat_shade that works on an indices array that stores floats individually instead of vec3s of floats 
+      { // Automatically assign the correct normals to each triangular element to achieve flat shading.  Affect all recently added triangles (those past "offset" in the list).
+        // Assumes that no vertices are shared across seams.
+        for( var counter = index_offset; counter < this.indices.length; counter += 9 )         // Iterate through triangles. Each three values in the indices array are one point, so three sets of three are one triangle
+        { 
+          var triangle_indices=[];
+          for(var i=0; i<9; i++){
+            triangle_indices.push(this.indices[counter+i]); 
+          }
+
+         //var indices = this.indexed ? [ this.indices[ counter ], this.indices[ counter + 1 ], this.indices[ counter + 2 ] ] : [ counter, counter + 1, counter + 2 ];
+
+          var p1 = vec3(this.positions[ triangle_indices[0] ], this.positions[ triangle_indices[1] ], this.positions[ triangle_indices[2] ]);
+          var p2 = vec3(this.positions[ triangle_indices[3] ], this.positions[ triangle_indices[4] ], this.positions[ triangle_indices[5] ]);
+          var p3 = vec3(this.positions[ triangle_indices[6] ], this.positions[ triangle_indices[7] ], this.positions[ triangle_indices[8] ]);
+
+          var n1 = normalize( cross( subtract(p1, p2), subtract(p3, p1) ) );    // Cross two edge vectors of this triangle together to get the normal
+
+           if( length( add( scale_vec( .1, n1 ), p1 ) ) < length( p1 ) )
+             n1 = scale_vec( -1, n1 );                    // Flip the normal if adding it to the triangle brings it closer to the origin.
+
+          this.normals[ triangle_indices[0] ] = this.normals[ triangle_indices[1] ] = this.normals[ triangle_indices[2] ] = vec3( n1[0], n1[1], n1[2] );   // Propagate the normal to the 3 vertices.
+        }
+      }
+
+*/
+
   } );
 
  
